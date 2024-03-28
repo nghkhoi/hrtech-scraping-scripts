@@ -49,6 +49,23 @@ def get_kinmuchi1():
     except Exception as e:
         return ''
 
+def get_kaishamei():
+    try:
+        el_kaishamei = driver.find_element (By.CSS_SELECTOR, ".company > .name")
+        content_text = el_kaishamei.get_attribute('innerHTML');
+        soup = BeautifulSoup(content_text, 'html.parser')
+        content_text = soup.get_text(separator='\n').strip()
+        return content_text;
+    except Exception as e:
+        return ''
+
+def get_shokushumei():
+    try:
+        el_shokushumei = driver.find_element (By.CSS_SELECTOR, ".title > p")
+        return el_shokushumei.get_attribute('textContent');
+    except Exception as e:
+        return ''
+
 try:
     # ユーザーネーム及びパースワードでログイン
     el_username = driver.find_element(By.CSS_SELECTOR, "input[name='email']")
@@ -77,21 +94,21 @@ try:
 
     # グーグルスプレッドシートへアクセス
 
-    rows = worksheet.get_all_values()
+    rows = worksheet.get_values('A1:Z3636')
     headers = worksheet.row_values(1)
 
     for idx, row in enumerate(rows, start=1):
         if row[0]:  # 1番目のセールにURLが入っている場合
-            if any(cell == '' for cell in row[5:23]):
+            if any(cell == '' for cell in row[3:24]):
                 target_url = row[0]
                 driver.get(target_url)
                 print (f'対応中: {idx} : {target_url}')
                 sleep(3)
 
-                for col_index in range(1, len(row)):
+                for col_index in range(3, 24):
                     if row[col_index] == '':
                         header = headers[col_index]
-                        content = get_kinmuchi1() if header == '勤務地' else get_content_by_header(header)
+                        content = get_kinmuchi1() if header == '勤務地' else (get_kaishamei() if header == '会社名' else (get_shokushumei() if header == '職種名' else get_content_by_header(header)))
                         worksheet.update_cell(idx, col_index+1, content)
                         sleep(2)
 
